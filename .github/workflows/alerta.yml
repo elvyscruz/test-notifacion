@@ -1,0 +1,40 @@
+name: Validar salida hola.js
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  test-hola:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Ejecutar hola.js y validar salida
+        id: test
+        run: |
+          OUTPUT=$(node hola.js)
+          echo "Salida del programa: $OUTPUT"
+
+          if [ "$OUTPUT" != "hola mundo" ]; then
+            echo "❌ La salida no es 'hola mundo'"
+            exit 1
+          fi
+
+          echo "✅ Salida correcta"
+
+      - name: Notificar error a ntfy
+        if: failure()
+        run: |
+          curl -X POST https://ntfy.sh/devops-itla \
+            -H "Title: ❌ Test fallido hola.js" \
+            -H "Priority: high" \
+            -d "La salida de hola.js no fue 'hola mundo'. Revisa el commit."
